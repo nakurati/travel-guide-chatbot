@@ -4,5 +4,5 @@ export default function Home() {
       <h1 className="text-2xl font-bold">Travel Guide ChatBot</h1>
       <p className="mt-2">Next.js + Supabase + OpenAI + LangChain</p>
     </main>
-  )
+  );
 }

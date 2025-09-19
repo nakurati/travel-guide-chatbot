@@ -37,3 +37,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project-specific
+.cache/          # embedding cache files
+
+# editor
+.vscode/
+# project-specific
+.cache/
+.vscode/
