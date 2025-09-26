@@ -1,5 +1,7 @@
 // POST  route which takes in { query } and → returns { results: [...] } with doc_id, chunk_id, similarity, preview
 
+export const runtime = 'nodejs'; // Pin Node.js runtime so service-role secrets never execute on Edge.
+
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';

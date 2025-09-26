@@ -4,6 +4,8 @@
 // - Embeds with OpenAI using OPENAI_EMBED_MODEL or default 'text-embedding-3-small'
 // - Returns LangChain `Document[]` with normalized metadata
 
+import 'server-only';
+
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { Document } from '@langchain/core/documents';

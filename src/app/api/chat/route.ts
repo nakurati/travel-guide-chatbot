@@ -8,6 +8,9 @@
 // - Citations use bracket markers [#i] that match the numbered chunks.
 // - The returned `sources[]` lines up with those markers so your UI can render cards.
 
+
+export const runtime = 'nodejs'; // Pin Node.js runtime so service-role secrets never execute on Edge.
+
 import 'dotenv/config';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';

@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'; // Pin Node.js runtime so service-role secrets never execute on Edge.
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
