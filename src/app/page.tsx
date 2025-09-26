@@ -1,155 +1,108 @@
+// src/app/page.tsx
 'use client';
+
 import { useState } from 'react';
 
-/**
- * Shape of a single search hit returned by /api/search
- * (Matches your updated RPC which now includes doc_title.)
- */
-type SearchResult = {
-  doc_id: string;
-  doc_title?: string;
-  chunk_id: string;                 // required for loading full chunk
-  similarity: number | string;
-  preview: string;
-};
+type InMessage = { role: 'user' | 'assistant' | 'system'; content: string };
+type OutSource = { index: number; title: string; doc_id: string; chunk_id: string };
+type OutBody = { answer: string; sources: OutSource[] };
 
-/** Optional details we fetch when a result is expanded */
-type ChunkDetails = {
-  content: string;
-  doc_title?: string | null;
-};
+export default function HomeChat() {
+  const [messages, setMessages] = useState<InMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function Home() {
-  // Form state
-  const [query, setQuery] = useState('');
-  // Results from the /api/search endpoint
-  const [results, setResults] = useState<SearchResult[]>([]);
-  // Network/loading state for the search action
-  const [isSearching, setIsSearching] = useState(false);
-  // Per-chunk expanded content cache (chunk_id → details)
-  const [expandedByChunkId, setExpandedByChunkId] = useState<
-    Record<string, ChunkDetails | undefined>
-  >({});
+  async function handleSend(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const question = input.trim();
+    if (!question || isSending) return;
 
-  /** Submit handler for search form */
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!query.trim()) return;
+    const nextMessages = [...messages, { role: 'user', content: question } as InMessage];
+    setMessages(nextMessages);
+    setInput('');
+    setIsSending(true);
+    setError(null);
 
-    setIsSearching(true);
     try {
-      // Call server-side API route so keys stay server-side
-      const response = await fetch('/api/search', {
+      const resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, k: 5, min: 0.3 }),
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: nextMessages }),
       });
+      if (!resp.ok) throw new Error(await resp.text());
+      const data = (await resp.json()) as OutBody;
 
-      const data = await response.json();
-      const normalized: SearchResult[] = Array.isArray(data.results) ? data.results : [];
-      setResults(normalized);
-      // Collapse any previously expanded chunks when a new search runs
-      setExpandedByChunkId({});
-    } catch (error) {
-      console.error('Search request failed:', error);
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }
+      // Build a compact source tag to append to the assistant reply
+      const uniqueTitles = Array.from(
+        new Set((data.sources || []).map(s => s.title).filter(Boolean)),
+      );
+      const sourceTag = uniqueTitles.length ? `\n\nsource: [${uniqueTitles.join(', ')}]` : '';
 
-  /**
-   * Toggle expand/collapse for a result card.
-   * On first expand, fetch the full chunk via /api/chunk/[id].
-   */
-  async function toggleExpand(chunkId: string) {
-    // If already expanded → collapse it
-    if (expandedByChunkId[chunkId]) {
-      setExpandedByChunkId((prev) => {
-        const next = { ...prev };
-        delete next[chunkId];
-        return next;
-      });
-      return;
-    }
-
-    // Fetch full chunk content
-    try {
-      const resp = await fetch(`/api/chunk/${chunkId}`);
-      if (!resp.ok) throw new Error(`Failed to load chunk ${chunkId}`);
-      const data = await resp.json();
-      setExpandedByChunkId((prev) => ({
+      setMessages(prev => [...prev, { role: 'assistant', content: `${data.answer}${sourceTag}` }]);
+    } catch (err) {
+      console.error('chat error:', err);
+      setError('Something went wrong. Please try again.');
+      setMessages(prev => [
         ...prev,
-        [chunkId]: {
-          content: data.content ?? '',
-          doc_title: data.doc_title ?? null,
-        },
-      }));
-    } catch (error) {
-      console.error('Failed to fetch chunk:', error);
-      // Keep it collapsed on error (could also set a sentinel)
+        { role: 'assistant', content: 'Error: Could not fetch an answer.' },
+      ]);
+    } finally {
+      setIsSending(false);
     }
   }
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-6">
+    <main className="max-w-3xl mx-auto p-6 space-y-6">
       {/* Header */}
       <header>
         <h1 className="text-2xl font-bold">Travel Guide ChatBot</h1>
-        <p className="mt-2">Next.js + Supabase + OpenAI + LangChain</p>
       </header>
 
-      {/* Search form */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      {/* Transcript */}
+      <section className="space-y-3">
+        {messages.length === 0 && (
+          <p className="opacity-70">Try: “What are the must-see spots in downtown Austin?”</p>
+        )}
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`rounded p-3 whitespace-pre-wrap ${
+              m.role === 'user' ? 'bg-blue-50' : 'bg-gray-50'
+            }`}
+          >
+            <div className="text-xs uppercase tracking-wide opacity-60 mb-1">{m.role}</div>
+            <div className="text-sm">{m.content}</div>
+          </div>
+        ))}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </section>
+
+      {/* Composer */}
+      <form onSubmit={handleSend} className="flex gap-2">
         <input
           className="flex-1 border rounded px-3 py-2"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Wikivoyage…"
+          placeholder="Ask a question…"
+          value={input}
+          onChange={e => setInput(e.target.value)}
         />
         <button
           className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-          disabled={!query || isSearching}
+          disabled={!input.trim() || isSending}
         >
-          {isSearching ? 'Searching…' : 'Search'}
+          {isSending ? 'Sending…' : 'Send'}
         </button>
       </form>
 
-      {/* Results */}
-      <section className="space-y-3">
-        {results.map((result, index) => {
-          const isExpanded = Boolean(expandedByChunkId[result.chunk_id]);
-          const expandedData = expandedByChunkId[result.chunk_id];
-
-          return (
-            <article key={index} className="border rounded p-3">
-              <div className="text-sm opacity-70">sim: {result.similarity}</div>
-              <div className="font-medium">
-                {result.doc_title || result.doc_id}
-              </div>
-              <p className="text-sm">{result.preview}…</p>
-
-              <button
-                onClick={() => toggleExpand(result.chunk_id)}
-                className="mt-2 text-sm underline"
-              >
-                {isExpanded ? 'Hide' : 'Show more'}
-              </button>
-
-              {isExpanded && expandedData && (
-                <div className="mt-2 text-sm whitespace-pre-wrap">
-                  {expandedData.content}
-                </div>
-              )}
-            </article>
-          );
-        })}
-
-        {/* Empty state */}
-        {results.length === 0 && !isSearching && (
-          <p className="opacity-70">No results yet.</p>
-        )}
-      </section>
+      {/* Footer for recruiters */}
+      <footer className="pt-4 border-t text-xs text-gray-600">
+        <div>
+          stack: <span className="font-medium">Next.js + Supabase + OpenAI + LangChain</span>
+        </div>
+        <div>
+          source: <span className="font-medium">Wikivoyage</span>
+        </div>
+      </footer>
     </main>
   );
 }
