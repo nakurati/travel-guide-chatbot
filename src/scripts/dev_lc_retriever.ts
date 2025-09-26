@@ -1,6 +1,6 @@
 // scripts/dev_lc_retriever.ts
 // Manual smoke test for the functional retriever.
-// Run: pnpm tsx scripts/dev_lc_retriever.ts
+// Run: pnpm tsx src/scripts/dev_lc_retriever.ts
 import 'dotenv/config';
 import { makeSupabaseRpcRetriever } from '../../src/lib/lc/supabaseRpcRetriever';
 
@@ -11,7 +11,7 @@ async function main() {
     minSimilarity: 0.30,
   });
 
-  const query = 'Eiffel Tower';
+  const query = 'Zilker Park';
   const docs = await retriever.getRelevantDocuments(query);
 
   console.log(`Query: "${query}" → ${docs.length} docs\n`);

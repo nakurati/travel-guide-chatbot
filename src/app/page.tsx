@@ -100,7 +100,7 @@ export default function HomeChat() {
           stack: <span className="font-medium">Next.js + Supabase + OpenAI + LangChain</span>
         </div>
         <div>
-          source: <span className="font-medium">Wikivoyage</span>
+          source: <span className="font-medium">Wikivoyage (Austin and Texas)</span>
         </div>
       </footer>
     </main>

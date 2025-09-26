@@ -1,4 +1,4 @@
-// test script to query by 'Eiffel Tower' and see if you get relevant results
+// test script to query by 'Zilker Park' and see if you get relevant results
 // rpc created earlier will be used
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
@@ -9,7 +9,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const EMB_MODEL = process.env.OPENAI_EMBED_MODEL || 'text-embedding-3-small';
 
 async function main() {
-  const query = process.argv[2] || 'Eiffel Tower';
+  const query = process.argv[2] || 'Zilker Park';
   const k = Number(process.argv[3] || 10);
   const minSim = Number(process.argv[4] || 0.35);
 
@@ -41,7 +41,7 @@ async function main() {
   }
 
   // 2) Always show lexical matches too (for sanity)
-  const qWords = ['eiffel tower', 'tour eiffel']; // add others if you like
+  const qWords = ['zilker park', 'downtown']; // add others if you like
   const like = qWords.map(w => `content ilike '%${w.replace(/'/g, "''")}%'`).join(' or ');
 
   const { data: lex, error: lexErr } = await supabase

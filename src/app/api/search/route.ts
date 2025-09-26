@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const vec = emb.data[0].embedding;
 
   // I created 3 rpcs -
-  // 1. search_chunks_hybrid - Guarantee literal matches (e.g., “Eiffel”) appear by UNION’ing a tiny ILIKE pass with vector results.
+  // 1. search_chunks_hybrid - Guarantee literal matches (e.g., “Zilker”) appear by UNION’ing a tiny ILIKE pass with vector results.
   // 2. search_chunks_exact - Avoids index tuning and returns exact
   // 3. search_chunks
   const { data, error } = await supabase.rpc('search_chunks_hybrid', {
