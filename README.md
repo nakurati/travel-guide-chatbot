@@ -61,3 +61,9 @@ pnpm install
 ## Running Locally
 
 pnpm dev (http://localhost:3000)
+
+## Deployment
+
+Deployed on **Vercel**
+
+- Production: https://travel-guide-chatbot.vercel.app
